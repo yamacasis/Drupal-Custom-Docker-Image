@@ -39,7 +39,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         zip \
         exif \
         pcntl \
-        opcache
+        opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -57,7 +59,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 # Prepare App
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer create-project --no-interaction drupal/recommended-project .
-RUN composer require drush/drush
+RUN composer update
+RUN composer require drush/drush drupal/redis
 
 ENV PATH=${PATH}:/var/www/html/vendor/bin
 

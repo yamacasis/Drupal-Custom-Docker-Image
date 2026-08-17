@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  drupal:
+    build: .
+    volumes:
+      - web_data:/var/www/html/web
+    restart: always
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=postgres
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+    depends_on:
+      - postgres
+      - redis
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
+    volumes:
+      - web_data:/var/www/html/web
+      - ./nginx/templates:/etc/nginx/templates
+    depends_on:
+      - drupal
+    restart: always
+
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-16}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    restart: always
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+volumes:
+  db_data:
+  web_data:
